@@ -23,7 +23,7 @@ const FinalScreen = ({ navigation }) => {
       </Text>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate("WorkoutScreen")}
+        onPress={() => navigation.navigate("Main")}
       >
         <Text style={styles.buttonText}>Get Started</Text>
       </TouchableOpacity>

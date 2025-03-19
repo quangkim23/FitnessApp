@@ -18,6 +18,16 @@ import FavoritesScreen from "../components/Workout/FavoritesScreen";
 import ProfileScreen from "../components/Profile/ProfileScreen";
 import SettingsScreen from "../components/Setting/SettingScreen";
 import WorkoutDetail from "../components/Workout/WorkoutDetail";
+import GenderScreen from "../page/welcome/GenderScreen";
+import HeightScreen from "../page/welcome/HeightScreen";
+import WeightScreen from "../page/welcome/WeightScreen";
+import GoalScreen from "../page/welcome/GoalScreen";
+import FitnessLevelScreen from "../page/welcome/FitnessLevelScreen";
+import ExercisePreferenceScreen from "../page/welcome/ExercisePreferenceScreen";
+import ExerciseFrequencyScreen from "../page/welcome/ExerciseFrequencyScreen";
+import BMICalculatorScreen from "../page/welcome/BMICalculatorScreen";
+import RewardScreen from "../page/welcome/RewardScreen";
+import FinalScreen from "../page/welcome/FinalScreen";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -74,11 +84,29 @@ export const AppNavigator = ({ initialRoute }) => (
       component={WelcomeScreen}
       options={{ headerShown: false }}
     />
+    <Stack.Screen name="GenderScreen" component={GenderScreen} />
+    <Stack.Screen name="HeightScreen" component={HeightScreen} />
+    <Stack.Screen name="WeightScreen" component={WeightScreen} />
+    <Stack.Screen name="GoalScreen" component={GoalScreen} />
+    <Stack.Screen name="FitnessLevelScreen" component={FitnessLevelScreen} />
+    <Stack.Screen
+      name="ExercisePreferenceScreen"
+      component={ExercisePreferenceScreen}
+    />
+    <Stack.Screen
+      name="ExerciseFrequencyScreen"
+      component={ExerciseFrequencyScreen}
+    />
+    <Stack.Screen name="BMICalculatorScreen" component={BMICalculatorScreen} />
+    <Stack.Screen name="RewardScreen" component={RewardScreen} />
+    <Stack.Screen name="FinalScreen" component={FinalScreen} />
+
     <Stack.Screen
       name="Main"
       component={MainTabs}
       options={{ headerShown: false }}
     />
+
     <Stack.Screen
       name="WorkoutDetail"
       component={WorkoutDetail}
