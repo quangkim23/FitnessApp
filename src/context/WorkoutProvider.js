@@ -1,4 +1,3 @@
-// src/context/WorkoutProvider.js
 import React, { createContext, useState, useContext, useEffect } from "react";
 import {
   fetchWorkouts,
@@ -15,15 +14,30 @@ export const WorkoutProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   const fetchWorkoutsData = async () => {
-    const workoutData = await fetchWorkouts();
-    setWorkouts(workoutData);
+    try {
+      const workoutData = await fetchWorkouts();
+      setWorkouts(workoutData);
+    } catch (error) {
+      console.error("Error fetching workouts:", error);
+    }
+  };
+
+  const fetchUserData = async () => {
+    try {
+      const userData = await fetchUsers();
+      if (userData.length > 0) {
+        setUser(userData[0]); // Assuming single user for now
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
   };
 
   useEffect(() => {
     const loadInitialData = async () => {
-      await fetchWorkoutsData();
-      const userData = await fetchUsers();
-      if (userData.length > 0) setUser(userData[0]); // Assuming single user for now
+      await Promise.all([fetchWorkoutsData(), fetchUserData()]);
     };
     loadInitialData();
   }, []);
@@ -40,11 +54,28 @@ export const WorkoutProvider = ({ children }) => {
 
   const updateUserProfile = async (userData) => {
     try {
-      const updatedUser = await saveUserData(userData);
-      setUser(updatedUser);
+      // Ensure all required fields from the database are included
+      const updatedUserData = {
+        id: user?.id || userData.id, // Preserve the user ID
+        gender: userData.gender,
+        height: parseFloat(userData.height),
+        weight: parseFloat(userData.weight),
+        goal: userData.goal,
+        exercise_preference: userData.exercise_preference,
+        exercise_frequency: parseInt(userData.exercise_frequency),
+        fitness_level: userData.fitness_level,
+        reward: userData.reward,
+        bmi: parseFloat(userData.bmi),
+        bmi_category: userData.bmi_category,
+      };
+
+      const updatedUser = await saveUserData(updatedUserData);
+      setUser(updatedUser); // Update the local state with the response
       await AsyncStorage.setItem("userInfoCompleted", "true");
+      return updatedUser; // Return the updated user for potential use
     } catch (error) {
       console.error("Error updating user profile:", error);
+      throw error; // Re-throw the error to be caught in the calling component
     }
   };
 
@@ -65,6 +96,12 @@ export const WorkoutProvider = ({ children }) => {
   );
 };
 
-export const useWorkout = () => useContext(WorkoutContext);
+export const useWorkout = () => {
+  const context = useContext(WorkoutContext);
+  if (!context) {
+    throw new Error("useWorkout must be used within a WorkoutProvider");
+  }
+  return context;
+};
 
 export default WorkoutProvider;

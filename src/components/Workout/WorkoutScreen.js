@@ -1,98 +1,148 @@
 // src/components/Workout/WorkoutScreen.js
-import React, { useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
+  TextInput,
   FlatList,
+  TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context"; // Import SafeAreaView
 import { useWorkout } from "../../context/WorkoutProvider";
+import { useNavigation } from "@react-navigation/native";
+import CustomHeader from "../header/CustomHeader";
+import Icon from "react-native-vector-icons/MaterialIcons";
 
-const WorkoutScreen = ({ navigation }) => {
-  const { workouts, fetchWorkouts } = useWorkout();
+const WorkoutScreen = () => {
+  const { workouts } = useWorkout();
+  const navigation = useNavigation();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredWorkouts, setFilteredWorkouts] = useState(workouts);
 
-  useEffect(() => {
-    fetchWorkouts();
-  }, [fetchWorkouts]);
+  // Handle search functionality
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    if (query.trim() === "") {
+      setFilteredWorkouts(workouts);
+    } else {
+      const results = workouts.filter((item) =>
+        item.name.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredWorkouts(results);
+    }
+  };
+
+  // Clear search query
+  const clearSearch = () => {
+    setSearchQuery("");
+    setFilteredWorkouts(workouts);
+  };
 
   const renderWorkout = ({ item }) => (
     <TouchableOpacity
       style={styles.workoutCard}
       onPress={() => navigation.navigate("WorkoutDetail", { workout: item })}
     >
-      <Text style={styles.workoutName}>{item.name || "Unnamed Workout"}</Text>
-      <Text style={styles.workoutDuration}>{item.duration || "N/A"}</Text>
+      <Text style={styles.workoutName}>{item.name}</Text>
+      <Text style={styles.workoutDetail}>Duration: {item.duration}</Text>
     </TouchableOpacity>
   );
 
-  if (!workouts) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4CAF50" />
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Your Workout Plan</Text>
-      <FlatList
-        data={workouts}
-        renderItem={renderWorkout}
-        keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>No workouts available</Text>
-        }
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <CustomHeader
+        title="Workouts"
+        navigation={navigation}
+        showBackButton={false}
+        onRightPress={() => {}}
       />
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.navigate("Favorites")}
-      >
-        <Text style={styles.buttonText}>View Favorites</Text>
-      </TouchableOpacity>
-    </View>
+      <View style={styles.content}>
+        <View style={styles.searchContainer}>
+          <Icon
+            name="search"
+            size={20}
+            color="#666"
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search workouts..."
+            value={searchQuery}
+            onChangeText={handleSearch}
+            autoCapitalize="none"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+              <Icon name="close" size={20} color="#666" />
+            </TouchableOpacity>
+          )}
+        </View>
+        <FlatList
+          data={filteredWorkouts}
+          renderItem={renderWorkout}
+          keyExtractor={(item) => item.id.toString()}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No workouts found</Text>
+          }
+        />
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#F5F5F5" },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#212121",
-    marginBottom: 20,
+  container: {
+    flex: 1,
+    backgroundColor: "#F5F5F5",
   },
-  list: { paddingBottom: 20 },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    height: 45,
+    fontSize: 16,
+    color: "#212121",
+  },
+  clearButton: {
+    padding: 5,
+  },
   workoutCard: {
     backgroundColor: "#FFFFFF",
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
     elevation: 2,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
   },
-  workoutName: { fontSize: 16, fontWeight: "500", color: "#212121" },
-  workoutDuration: { fontSize: 14, color: "#666" },
-  button: {
-    backgroundColor: "#4CAF50",
-    paddingVertical: 15,
-    paddingHorizontal: 40,
-    borderRadius: 25,
-    alignSelf: "center",
-    marginTop: 20,
-    elevation: 2,
-  },
-  buttonText: {
-    color: "#FFFFFF",
+  workoutName: {
     fontSize: 16,
     fontWeight: "600",
-    textAlign: "center",
+    color: "#212121",
+  },
+  workoutDetail: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 5,
   },
   emptyText: {
     fontSize: 16,

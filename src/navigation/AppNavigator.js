@@ -1,3 +1,4 @@
+// src/navigation/AppNavigator.js
 import React from "react";
 import {
   View,
@@ -28,15 +29,19 @@ import ExerciseFrequencyScreen from "../page/welcome/ExerciseFrequencyScreen";
 import BMICalculatorScreen from "../page/welcome/BMICalculatorScreen";
 import RewardScreen from "../page/welcome/RewardScreen";
 import FinalScreen from "../page/welcome/FinalScreen";
+// New Screens
+import ProgressScreen from "../components/Progress/ProgressScreen";
+import DietScreen from "../components/Diet/DietScreen";
+import AchievementsScreen from "../components/Achievements/AchievementsScreen";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 export const LoadingScreen = ({ reloadApp }) => (
   <View style={styles.loadingContainer}>
-    <ActivityIndicator size="large" color="#4CAF50" />
+    <ActivityIndicator size="large" color="#FF6F61" />
     <Text style={styles.loadingText}>Getting ready...</Text>
-    <Button title="Reload App" onPress={reloadApp} color="#4CAF50" />
+    <Button title="Reload App" onPress={reloadApp} color="#FF6F61" />
   </View>
 );
 
@@ -46,71 +51,158 @@ const MainTabs = () => (
       tabBarIcon: ({ color, size }) => {
         let iconName;
         switch (route.name) {
+          case "Progress":
+            iconName = "trending-up";
+            break;
           case "Workout":
             iconName = "fitness-center";
             break;
-          case "Search":
-            iconName = "search";
+          case "Diet":
+            iconName = "restaurant";
             break;
-          case "Favorites":
-            iconName = "favorite";
+          case "Achievements":
+            iconName = "star";
             break;
           case "Profile":
             iconName = "person";
             break;
-          case "Settings":
-            iconName = "settings";
-            break;
         }
         return <Icon name={iconName} size={size} color={color} />;
       },
-      tabBarActiveTintColor: "#4CAF50",
+      tabBarActiveTintColor: "#FF6F61", // Coral color for weight loss theme
       tabBarInactiveTintColor: "gray",
-      tabBarStyle: { height: 60, paddingBottom: 10 },
+      tabBarStyle: {
+        height: 60,
+        paddingBottom: 10,
+        backgroundColor: "#FFFFFF",
+      },
+      tabBarLabelStyle: { fontSize: 12, fontWeight: "600" },
     })}
   >
-    <Tab.Screen name="Workout" component={WorkoutScreen} />
-    <Tab.Screen name="Search" component={SearchScreen} />
-    <Tab.Screen name="Favorites" component={FavoritesScreen} />
-    <Tab.Screen name="Profile" component={ProfileScreen} />
-    <Tab.Screen name="Settings" component={SettingsScreen} />
+    <Tab.Screen
+      name="Progress"
+      component={ProgressScreen}
+      options={{ headerShown: false }}
+    />
+    <Tab.Screen
+      name="Workout"
+      component={WorkoutScreen}
+      options={{ headerShown: false }}
+    />
+    <Tab.Screen
+      name="Diet"
+      component={DietScreen}
+      options={{ headerShown: false }}
+    />
+    <Tab.Screen
+      name="Achievements"
+      component={AchievementsScreen}
+      options={{ headerShown: false }}
+    />
+    <Tab.Screen
+      name="Profile"
+      component={ProfileScreen}
+      options={{ headerShown: false }}
+    />
   </Tab.Navigator>
 );
 
 export const AppNavigator = ({ initialRoute }) => (
-  <Stack.Navigator initialRouteName={initialRoute}>
+  <Stack.Navigator
+    initialRouteName={initialRoute}
+    screenOptions={{
+      headerStyle: {
+        backgroundColor: "#FF6F61",
+        elevation: 0,
+        shadowOpacity: 0,
+      },
+      headerTintColor: "#FFFFFF",
+      headerTitleStyle: { fontWeight: "600", fontSize: 18 },
+      cardStyle: { backgroundColor: "#F5F5F5" },
+    }}
+  >
+    {/* Onboarding Flow */}
     <Stack.Screen
       name="Welcome"
       component={WelcomeScreen}
       options={{ headerShown: false }}
     />
-    <Stack.Screen name="GenderScreen" component={GenderScreen} />
-    <Stack.Screen name="HeightScreen" component={HeightScreen} />
-    <Stack.Screen name="WeightScreen" component={WeightScreen} />
-    <Stack.Screen name="GoalScreen" component={GoalScreen} />
-    <Stack.Screen name="FitnessLevelScreen" component={FitnessLevelScreen} />
+    <Stack.Screen
+      name="GenderScreen"
+      component={GenderScreen}
+      options={{ title: "Your Gender" }}
+    />
+    <Stack.Screen
+      name="HeightScreen"
+      component={HeightScreen}
+      options={{ title: "Your Height" }}
+    />
+    <Stack.Screen
+      name="WeightScreen"
+      component={WeightScreen}
+      options={{ title: "Your Weight" }}
+    />
+    <Stack.Screen
+      name="GoalScreen"
+      component={GoalScreen}
+      options={{ title: "Your Goal" }}
+    />
+    <Stack.Screen
+      name="FitnessLevelScreen"
+      component={FitnessLevelScreen}
+      options={{ title: "Fitness Level" }}
+    />
     <Stack.Screen
       name="ExercisePreferenceScreen"
       component={ExercisePreferenceScreen}
+      options={{ title: "Exercise Preference" }}
     />
     <Stack.Screen
       name="ExerciseFrequencyScreen"
       component={ExerciseFrequencyScreen}
+      options={{ title: "Exercise Frequency" }}
     />
-    <Stack.Screen name="BMICalculatorScreen" component={BMICalculatorScreen} />
-    <Stack.Screen name="RewardScreen" component={RewardScreen} />
-    <Stack.Screen name="FinalScreen" component={FinalScreen} />
+    <Stack.Screen
+      name="BMICalculatorScreen"
+      component={BMICalculatorScreen}
+      options={{ title: "BMI Calculator" }}
+    />
+    <Stack.Screen
+      name="RewardScreen"
+      component={RewardScreen}
+      options={{ title: "Your Reward" }}
+    />
+    <Stack.Screen
+      name="FinalScreen"
+      component={FinalScreen}
+      options={{ title: "Setup Complete", headerLeft: () => null }}
+    />
 
+    {/* Main App Flow */}
     <Stack.Screen
       name="Main"
       component={MainTabs}
       options={{ headerShown: false }}
     />
-
     <Stack.Screen
       name="WorkoutDetail"
       component={WorkoutDetail}
       options={{ title: "Workout Details" }}
+    />
+    <Stack.Screen
+      name="Search"
+      component={SearchScreen}
+      options={{ title: "Search Workouts" }}
+    />
+    <Stack.Screen
+      name="Favorites"
+      component={FavoritesScreen}
+      options={{ title: "" }}
+    />
+    <Stack.Screen
+      name="Settings"
+      component={SettingsScreen}
+      options={{ title: "" }}
     />
   </Stack.Navigator>
 );
@@ -125,7 +217,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: "#4CAF50",
+    color: "#FF6F61",
     fontWeight: "500",
   },
 });

@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import ToastAndroid from "react-native";
 import { WorkoutProvider } from "./src/context/WorkoutProvider";
 import { LoadingScreen, AppNavigator } from "./src/navigation/AppNavigator";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -44,12 +45,14 @@ const App = () => {
   if (isLoading) return <LoadingScreen reloadApp={reloadApp} />;
 
   return (
-    <WorkoutProvider>
-      <NavigationContainer>
-        <AppNavigator initialRoute={initialRoute} />
-        <StatusBar style="light" backgroundColor="#4CAF50" />
-      </NavigationContainer>
-    </WorkoutProvider>
+    <SafeAreaProvider>
+      <WorkoutProvider>
+        <NavigationContainer>
+          <AppNavigator initialRoute={initialRoute} />
+          <StatusBar style="light" backgroundColor="#4CAF50" />
+        </NavigationContainer>
+      </WorkoutProvider>
+    </SafeAreaProvider>
   );
 };
 

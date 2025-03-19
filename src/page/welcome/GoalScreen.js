@@ -1,51 +1,88 @@
 // src/page/welcome/GoalScreen.js
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
+import { useWorkout } from "../../context/WorkoutProvider";
 
 const GoalScreen = ({ navigation }) => {
-  const [goal, setGoal] = useState(null);
+  const { updateUser } = useWorkout();
+  const [goal, setGoal] = useState("lose_weight");
+  const [targetWeight, setTargetWeight] = useState("");
+  const [calorieGoal, setCalorieGoal] = useState(null);
 
-  const options = [
-    { label: "Giảm cân", value: "lose_weight" },
-    { label: "Xây dựng cơ bắp", value: "build_muscle" },
-    { label: "Giữ dáng", value: "stay_fit" },
-  ];
-
-  const handleSelect = async (value) => {
-    setGoal(value);
-    try {
-      await AsyncStorage.setItem("goal", value);
-      navigation.navigate("ExercisePreferenceScreen");
-    } catch (err) {
-      console.error("Error saving goal:", err);
+  const handleNext = () => {
+    if (!targetWeight && goal === "lose_weight") {
+      alert("Please enter your target weight.");
+      return;
     }
+    // Calculate daily calorie goal (simplified formula for demo)
+    if (goal === "lose_weight") {
+      const weightLossPerWeek = 0.5; // 0.5 kg per week (safe weight loss rate)
+      const calorieDeficit = (weightLossPerWeek * 7700) / 7; // 7700 calories = 1 kg
+      const dailyCalorieGoal = 2000 - calorieDeficit; // Base of 2000 calories for simplicity
+      setCalorieGoal(Math.round(dailyCalorieGoal));
+      updateUser({
+        goal,
+        targetWeight: parseFloat(targetWeight),
+        dailyCalorieGoal,
+      });
+    } else {
+      updateUser({ goal });
+    }
+    navigation.navigate("FitnessLevelScreen");
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Mục tiêu tập luyện của bạn là gì?</Text>
-      <View style={styles.optionsContainer}>
-        {options.map((option) => (
-          <TouchableOpacity
-            key={option.value}
-            style={[
-              styles.button,
-              goal === option.value && styles.selectedButton,
-            ]}
-            onPress={() => handleSelect(option.value)}
-          >
-            <Text
-              style={[
-                styles.buttonText,
-                goal === option.value && styles.selectedButtonText,
-              ]}
-            >
-              {option.label}
+      <Text style={styles.title}>What’s Your Goal?</Text>
+      <TouchableOpacity
+        style={[styles.option, goal === "lose_weight" && styles.selectedOption]}
+        onPress={() => setGoal("lose_weight")}
+      >
+        <Text style={styles.optionText}>Lose Weight</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[
+          styles.option,
+          goal === "build_muscle" && styles.selectedOption,
+        ]}
+        onPress={() => setGoal("build_muscle")}
+      >
+        <Text style={styles.optionText}>Build Muscle</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.option, goal === "stay_fit" && styles.selectedOption]}
+        onPress={() => setGoal("stay_fit")}
+      >
+        <Text style={styles.optionText}>Stay Fit</Text>
+      </TouchableOpacity>
+
+      {goal === "lose_weight" && (
+        <View style={styles.targetWeightContainer}>
+          <Text style={styles.label}>Target Weight (kg):</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={targetWeight}
+            onChangeText={setTargetWeight}
+            placeholder="Enter your target weight"
+          />
+          {calorieGoal && (
+            <Text style={styles.calorieGoal}>
+              Estimated Daily Calorie Goal: {calorieGoal} kcal
             </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+          )}
+        </View>
+      )}
+
+      <TouchableOpacity style={styles.button} onPress={handleNext}>
+        <Text style={styles.buttonText}>Next</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -55,36 +92,68 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: "#F5F5F5",
-    alignItems: "center",
     justifyContent: "center",
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 28,
+    fontWeight: "700",
     color: "#212121",
-    marginBottom: 30,
     textAlign: "center",
+    marginBottom: 30,
   },
-  optionsContainer: { width: "100%", alignItems: "center" },
-  button: {
+  option: {
     backgroundColor: "#FFFFFF",
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 10,
-    marginVertical: 8,
-    width: "80%",
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 15,
+    alignItems: "center",
     borderWidth: 1,
     borderColor: "#E0E0E0",
-    elevation: 2,
   },
-  selectedButton: { backgroundColor: "#4CAF50", borderColor: "#388E3C" },
-  buttonText: {
+  selectedOption: {
+    borderColor: "#FF6F61",
+    borderWidth: 2,
+  },
+  optionText: {
     fontSize: 16,
     color: "#212121",
-    textAlign: "center",
     fontWeight: "500",
   },
-  selectedButtonText: { color: "#FFFFFF", fontWeight: "600" },
+  targetWeightContainer: {
+    marginTop: 20,
+  },
+  label: {
+    fontSize: 16,
+    color: "#212121",
+    marginBottom: 10,
+  },
+  input: {
+    backgroundColor: "#FFFFFF",
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    fontSize: 16,
+    marginBottom: 15,
+  },
+  calorieGoal: {
+    fontSize: 16,
+    color: "#FF6F61",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: "#FF6F61",
+    paddingVertical: 15,
+    borderRadius: 25,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
 });
 
 export default GoalScreen;

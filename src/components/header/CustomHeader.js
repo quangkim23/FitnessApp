@@ -1,34 +1,35 @@
+// src/components/header/CustomHeader.js
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 
-const CustomHeader = ({ navigation, scene, previous }) => {
-  if (!scene || !scene.descriptor) return null;
-
-  const { options } = scene.descriptor;
-  const title = options.title ?? options.headerTitle ?? "Fitness App";
-
+const CustomHeader = ({
+  title,
+  navigation,
+  showBackButton = true,
+  rightIcon = null,
+  onRightPress = null,
+}) => {
   return (
     <View style={styles.header}>
-      <TouchableOpacity
-        onPress={() =>
-          previous ? navigation.goBack() : navigation.navigate("WorkoutScreen")
-        }
-        style={styles.headerIcon}
-      >
-        <Icon
-          name={previous ? "arrow-back" : "home"}
-          size={24}
-          color="#FFFFFF"
-        />
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>{title}</Text>
-      <TouchableOpacity
-        onPress={() => navigation.navigate("SearchScreen")}
-        style={styles.headerIcon}
-      >
-        <Icon name="search" size={24} color="#FFFFFF" />
-      </TouchableOpacity>
+      {showBackButton ? (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Icon name="arrow-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.backButton} /> // Placeholder to maintain layout
+      )}
+      <Text style={styles.title}>{title}</Text>
+      {rightIcon ? (
+        <TouchableOpacity onPress={onRightPress} style={styles.rightButton}>
+          <Icon name={rightIcon} size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.rightButton} /> // Placeholder to maintain layout
+      )}
     </View>
   );
 };
@@ -36,21 +37,29 @@ const CustomHeader = ({ navigation, scene, previous }) => {
 const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    height: 60,
-    backgroundColor: "#4CAF50",
-    paddingHorizontal: 15,
-    elevation: 4,
+    justifyContent: "space-between",
+    backgroundColor: "#FF6F61", // Coral theme
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+  backButton: {
+    padding: 5,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
     color: "#FFFFFF",
     textAlign: "center",
     flex: 1,
   },
-  headerIcon: { padding: 5 },
+  rightButton: {
+    padding: 5,
+  },
 });
 
 export default CustomHeader;
