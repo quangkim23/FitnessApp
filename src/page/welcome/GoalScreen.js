@@ -1,4 +1,3 @@
-// src/page/welcome/GoalScreen.js
 import React, { useState } from "react";
 import {
   View,
@@ -6,35 +5,63 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { useWorkout } from "../../context/WorkoutProvider";
 
 const GoalScreen = ({ navigation }) => {
-  const { updateUser } = useWorkout();
-  const [goal, setGoal] = useState("lose_weight");
-  const [targetWeight, setTargetWeight] = useState("");
-  const [calorieGoal, setCalorieGoal] = useState(null);
+  const { user, updateUserProfile } = useWorkout(); // Added user to access existing data
+  const [goal, setGoal] = useState(user?.goal || "lose_weight");
+  const [targetWeight, setTargetWeight] = useState(
+    user?.targetWeight?.toString() || ""
+  );
 
-  const handleNext = () => {
-    if (!targetWeight && goal === "lose_weight") {
-      alert("Please enter your target weight.");
-      return;
-    }
-    // Calculate daily calorie goal (simplified formula for demo)
-    if (goal === "lose_weight") {
+  const calculateDailyCalorieGoal = (goal, targetWeight) => {
+    if (goal === "lose_weight" && targetWeight) {
       const weightLossPerWeek = 0.5; // 0.5 kg per week (safe weight loss rate)
       const calorieDeficit = (weightLossPerWeek * 7700) / 7; // 7700 calories = 1 kg
-      const dailyCalorieGoal = 2000 - calorieDeficit; // Base of 2000 calories for simplicity
-      setCalorieGoal(Math.round(dailyCalorieGoal));
-      updateUser({
-        goal,
-        targetWeight: parseFloat(targetWeight),
-        dailyCalorieGoal,
-      });
-    } else {
-      updateUser({ goal });
+      const baseCalories = 2000; // Simplified base (could be dynamic based on user data)
+      return Math.round(baseCalories - calorieDeficit);
     }
-    navigation.navigate("FitnessLevelScreen");
+    return null; // No calorie goal for other goals in this simplified version
+  };
+
+  const handleNext = async () => {
+    if (goal === "lose_weight" && !targetWeight) {
+      Alert.alert("Error", "Please enter your target weight.");
+      return;
+    }
+
+    const parsedTargetWeight = targetWeight ? parseFloat(targetWeight) : null;
+    if (
+      goal === "lose_weight" &&
+      (isNaN(parsedTargetWeight) || parsedTargetWeight <= 0)
+    ) {
+      Alert.alert("Error", "Target weight must be a valid positive number.");
+      return;
+    }
+
+    // Calculate daily calorie goal if applicable
+    const dailyCalorieGoal = calculateDailyCalorieGoal(
+      goal,
+      parsedTargetWeight
+    );
+
+    // Prepare updated user data, preserving existing fields
+    const updatedUserData = {
+      ...user, // Preserve existing fields like id, height, weight, etc.
+      goal,
+      targetWeight: parsedTargetWeight || undefined, // Only include if provided
+      dailyCalorieGoal: dailyCalorieGoal || undefined, // Only include if calculated
+    };
+
+    try {
+      await updateUserProfile(updatedUserData);
+      navigation.navigate("FitnessLevelScreen");
+    } catch (error) {
+      Alert.alert("Error", "Failed to save your goal. Please try again.");
+      console.error("Error updating user profile:", error);
+    }
   };
 
   return (
@@ -72,9 +99,10 @@ const GoalScreen = ({ navigation }) => {
             onChangeText={setTargetWeight}
             placeholder="Enter your target weight"
           />
-          {calorieGoal && (
+          {targetWeight && (
             <Text style={styles.calorieGoal}>
-              Estimated Daily Calorie Goal: {calorieGoal} kcal
+              Estimated Daily Calorie Goal:{" "}
+              {calculateDailyCalorieGoal(goal, parseFloat(targetWeight))} kcal
             </Text>
           )}
         </View>
@@ -91,7 +119,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#F5F5",
+    ruling: "hidden",
     justifyContent: "center",
   },
   title: {

@@ -77,6 +77,30 @@
       "reward": "new_clothes",
       "bmi": 23.67,
       "bmi_category": "normal"
+    },
+    {
+      "id": 1,
+      "height": null,
+      "weight": null,
+      "goal": "build_muscle",
+      "exercise_frequency": null,
+      "bmi": null
+    },
+    {
+      "id": 1,
+      "height": null,
+      "weight": null,
+      "goal": "build_muscle",
+      "exercise_frequency": null,
+      "bmi": null
+    },
+    {
+      "id": 1,
+      "height": null,
+      "weight": null,
+      "goal": "lose_weight",
+      "exercise_frequency": null,
+      "bmi": null
     }
   ],
   "workouts": [

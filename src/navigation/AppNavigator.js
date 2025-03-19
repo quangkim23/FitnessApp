@@ -51,11 +51,11 @@ const MainTabs = () => (
       tabBarIcon: ({ color, size }) => {
         let iconName;
         switch (route.name) {
-          case "Progress":
-            iconName = "trending-up";
-            break;
           case "Workout":
             iconName = "fitness-center";
+            break;
+          case "Progress":
+            iconName = "trending-up";
             break;
           case "Diet":
             iconName = "restaurant";
