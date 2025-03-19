@@ -1,31 +1,64 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// src/page/welcome/GenderScreen.js
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const GenderScreen = ({ navigation }) => {
-  const saveGender = async (gender) => {
-    await AsyncStorage.setItem('gender', gender);
-    navigation.navigate('HeightScreen');  // Chuyển sang màn tiếp theo
+  const [gender, setGender] = useState(null);
+
+  const options = [
+    { label: "Male", value: "male" },
+    { label: "Female", value: "female" },
+  ];
+
+  const handleSelect = async (value) => {
+    setGender(value);
+    try {
+      await AsyncStorage.setItem("gender", value);
+      navigation.navigate("HeightScreen");
+    } catch (err) {
+      console.error("Error saving gender:", err);
+    }
+  };
+
+  const handleSkip = async () => {
+    try {
+      await AsyncStorage.setItem("gender", "other");
+      navigation.navigate("HeightScreen");
+    } catch (err) {
+      console.error("Error skipping gender:", err);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Cho chúng tôi biết giới tính của bạn</Text>
+      <Text style={styles.title}>What is your gender?</Text>
       <Text style={styles.subtitle}>
-        Điều này sẽ giúp chúng tôi tính toán tốc độ trao đổi chất của bạn để điều chỉnh cường độ.
+        This helps us tailor your workout plan.
       </Text>
-
-      <View style={styles.genderButtons}>
-        <TouchableOpacity style={styles.button} onPress={() => saveGender('Male')}>
-          <Text style={styles.buttonText}>Male</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => saveGender('Female')}>
-          <Text style={styles.buttonText}>Female</Text>
-        </TouchableOpacity>
+      <View style={styles.optionsContainer}>
+        {options.map((option) => (
+          <TouchableOpacity
+            key={option.value}
+            style={[
+              styles.button,
+              gender === option.value && styles.selectedButton,
+            ]}
+            onPress={() => handleSelect(option.value)}
+          >
+            <Text
+              style={[
+                styles.buttonText,
+                gender === option.value && styles.selectedButtonText,
+              ]}
+            >
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
-
-      <TouchableOpacity style={styles.skipButton} onPress={() => saveGender('Other')}>
-        <Text style={styles.buttonText}>Khác / Không muốn tiết lộ</Text>
+      <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+        <Text style={styles.skipText}>Skip / Prefer not to say</Text>
       </TouchableOpacity>
     </View>
   );
@@ -34,44 +67,49 @@ const GenderScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
     padding: 20,
+    backgroundColor: "#F5F5F5",
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
+    color: "#212121",
+    marginBottom: 10,
+    textAlign: "center",
   },
   subtitle: {
-    fontSize: 16,
-    marginTop: 10,
-    textAlign: 'center',
-    marginHorizontal: 30,
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 30,
   },
-  genderButtons: {
-    flexDirection: 'row',
-    marginTop: 20,
+  optionsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    width: "100%",
   },
   button: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-    borderRadius: 30,
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 10,
     marginHorizontal: 10,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    elevation: 2,
   },
-  skipButton: {
-    marginTop: 20,
-    backgroundColor: '#ccc',
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-    borderRadius: 30,
-  },
+  selectedButton: { backgroundColor: "#4CAF50", borderColor: "#388E3C" },
   buttonText: {
-    color: 'white',
-    fontSize: 18,
-    textAlign: 'center',
+    fontSize: 16,
+    color: "#212121",
+    textAlign: "center",
+    fontWeight: "500",
   },
+  selectedButtonText: { color: "#FFFFFF", fontWeight: "600" },
+  skipButton: { marginTop: 20 },
+  skipText: { fontSize: 14, color: "#666", textDecorationLine: "underline" },
 });
 
 export default GenderScreen;

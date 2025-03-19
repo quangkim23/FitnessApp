@@ -1,25 +1,51 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// src/page/welcome/FitnessLevelScreen.js
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const FitnessLevelScreen = ({ navigation }) => {
-  const saveFitnessLevel = async (level) => {
-    await AsyncStorage.setItem('fitnessLevel', level);
-    navigation.navigate('RewardScreen');
+  const [level, setLevel] = useState(null);
+
+  const options = [
+    { label: "Beginner", value: "beginner" },
+    { label: "Intermediate", value: "intermediate" },
+    { label: "Advanced", value: "advanced" },
+  ];
+
+  const handleSelect = async (value) => {
+    setLevel(value);
+    try {
+      await AsyncStorage.setItem("fitnessLevel", value);
+      navigation.navigate("BMICalculatorScreen");
+    } catch (err) {
+      console.error("Error saving fitness level:", err);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Ước tính trình độ thể dục của bạn</Text>
-      <TouchableOpacity style={styles.button} onPress={() => saveFitnessLevel('Người bắt đầu')}>
-        <Text style={styles.buttonText}>Người bắt đầu</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={() => saveFitnessLevel('Trung bình')}>
-        <Text style={styles.buttonText}>Trung bình</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={() => saveFitnessLevel('Nâng cao')}>
-        <Text style={styles.buttonText}>Nâng cao</Text>
-      </TouchableOpacity>
+      <Text style={styles.title}>What is your fitness level?</Text>
+      <View style={styles.optionsContainer}>
+        {options.map((option) => (
+          <TouchableOpacity
+            key={option.value}
+            style={[
+              styles.button,
+              level === option.value && styles.selectedButton,
+            ]}
+            onPress={() => handleSelect(option.value)}
+          >
+            <Text
+              style={[
+                styles.buttonText,
+                level === option.value && styles.selectedButtonText,
+              ]}
+            >
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 };
@@ -27,28 +53,38 @@ const FitnessLevelScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
     padding: 20,
+    backgroundColor: "#F5F5F5",
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontWeight: "bold",
+    color: "#212121",
+    marginBottom: 30,
+    textAlign: "center",
   },
+  optionsContainer: { width: "100%", alignItems: "center" },
   button: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-    borderRadius: 30,
-    marginVertical: 10,
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+    marginVertical: 8,
+    width: "80%",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    elevation: 2,
   },
+  selectedButton: { backgroundColor: "#4CAF50", borderColor: "#388E3C" },
   buttonText: {
-    color: 'white',
-    fontSize: 18,
-    textAlign: 'center',
+    fontSize: 16,
+    color: "#212121",
+    textAlign: "center",
+    fontWeight: "500",
   },
+  selectedButtonText: { color: "#FFFFFF", fontWeight: "600" },
 });
 
 export default FitnessLevelScreen;

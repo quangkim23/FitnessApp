@@ -1,77 +1,91 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// src/page/welcome/WeightScreen.js
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const WeightScreen = ({ navigation }) => {
-  const [weight, setWeight] = useState('75.0');
+  const [weight, setWeight] = useState("");
+  const [error, setError] = useState("");
 
-  const saveWeight = async () => {
-    await AsyncStorage.setItem('weight', weight);
-    navigation.navigate('GoalScreen');
+  const handleContinue = async () => {
+    if (!weight || parseFloat(weight) <= 0) {
+      setError("Please enter a valid weight");
+      return;
+    }
+    try {
+      await AsyncStorage.setItem("weight", weight);
+      navigation.navigate("GoalScreen");
+    } catch (err) {
+      console.error("Error saving weight:", err);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Cân nặng hiện tại của bạn là bao nhiêu?</Text>
+      <Text style={styles.title}>What is your weight?</Text>
       <TextInput
         style={styles.input}
+        placeholder="Weight (kg)"
         value={weight}
+        onChangeText={(text) => {
+          setWeight(text);
+          setError("");
+        }}
         keyboardType="numeric"
-        onChangeText={setWeight}
       />
-      <TouchableOpacity style={styles.button} onPress={saveWeight}>
-        <Text style={styles.buttonText}>Tiếp theo</Text>
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <TouchableOpacity style={styles.button} onPress={handleContinue}>
+        <Text style={styles.buttonText}>Continue</Text>
       </TouchableOpacity>
     </View>
   );
 };
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
     padding: 20,
+    backgroundColor: "#F5F5F5",
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
+    color: "#212121",
+    marginBottom: 30,
+    textAlign: "center",
   },
   input: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: 20,
-    width: '80%',
-    padding: 10,
-    borderBottomWidth: 2,
-    borderColor: '#4CAF50',
-  },
-  unitButton: {
-    marginTop: 10,
-    backgroundColor: '#4CAF50',
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-    borderRadius: 30,
-  },
-  bmiText: {
+    width: "80%",
+    padding: 12,
+    marginVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    backgroundColor: "#FFFFFF",
     fontSize: 16,
-    marginTop: 10,
-    color: '#4CAF50',
   },
+  error: { color: "#D32F2F", fontSize: 14, marginBottom: 10 },
   button: {
-    marginTop: 30,
-    backgroundColor: '#4CAF50',
-    paddingVertical: 12,
+    backgroundColor: "#4CAF50",
+    paddingVertical: 15,
     paddingHorizontal: 40,
-    borderRadius: 30,
+    borderRadius: 25,
+    marginTop: 20,
+    elevation: 2,
   },
   buttonText: {
-    color: 'white',
-    fontSize: 18,
-    textAlign: 'center',
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });
 

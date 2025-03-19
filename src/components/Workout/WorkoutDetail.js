@@ -1,227 +1,188 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, StyleSheet, ActivityIndicator, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// src/components/Workout/WorkoutDetail.js
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  Modal,
+  Dimensions,
+  Alert,
+  ActivityIndicator,
+  ScrollView,
+} from "react-native";
+import YoutubePlayer from "react-native-youtube-iframe"; // Import YouTube player
+import { useWorkout } from "../../context/WorkoutProvider";
+import { fetchWorkoutExercises } from "../../service/WorkoutService";
 
-const API_EXERCISES = 'http://192.168.13.105:9999/exercises'; // Replace with correct IP address
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
-const WorkoutDetailScreen = ({ route, navigation }) => {
-  const { selectedWorkout } = route.params;
-  const [detailedExercises, setDetailedExercises] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedExercise, setSelectedExercise] = useState(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [favorites, setFavorites] = useState([]);
+const WorkoutDetail = ({ route, navigation }) => {
+  const { workout } = route.params;
+  const { favorites, addToFavorites, removeFromFavorites } = useWorkout();
+  const [workoutExercises, setWorkoutExercises] = useState([]);
+  const [selectedVideoId, setSelectedVideoId] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+
+  const isFavorite = favorites.some((item) => item.id === workout.id);
 
   useEffect(() => {
-    const fetchExercises = async () => {
-      try {
-        const response = await fetch(API_EXERCISES);
-        const allExercises = await response.json();
-
-        const enrichedExercises = selectedWorkout.exercises.map(exercise => {
-          const exerciseDetail = allExercises.find(e => e.id === exercise.exerciseId);
-          return {
-            ...exercise,
-            name: exerciseDetail ? exerciseDetail.name : "Không xác định",
-            imageURLs: exerciseDetail ? exerciseDetail.imageURLs : ["https://example.com/default.jpg"],
-            description: exerciseDetail ? exerciseDetail.description : "",
-            instructions: exerciseDetail ? exerciseDetail.instructions : "",
-            completed: exercise.completed || false
-          };
-        });
-
-        setDetailedExercises(enrichedExercises);
-      } catch (error) {
-        console.error("❌ Lỗi khi tải bài tập chi tiết:", error);
-      } finally {
-        setLoading(false);
-      }
+    const loadWorkoutExercises = async () => {
+      const exercises = await fetchWorkoutExercises(workout.id);
+      setWorkoutExercises(exercises);
     };
+    loadWorkoutExercises();
+  }, [workout.id]);
 
-    fetchExercises();
-  }, [selectedWorkout]);
-
-  // Mark exercise as completed
-  const markExerciseAsCompleted = (exerciseId) => {
-    const updatedExercises = detailedExercises.map(exercise => {
-      if (exercise.exerciseId === exerciseId) {
-        return { ...exercise, completed: true };
-      }
-      return exercise;
-    });
-
-    setDetailedExercises(updatedExercises);
-
-    fetch(`http://192.168.13.105:9999/workouts/${selectedWorkout.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...selectedWorkout,
-        exercises: updatedExercises.map(exercise => ({
-          exerciseId: exercise.exerciseId,
-          sets: exercise.sets,
-          reps: exercise.reps,
-          completed: exercise.completed
-        }))
-      }),
-    })
-      .then(response => response.json())
-      .catch(error => console.error("❌ Lỗi khi cập nhật workout:", error));
-  };
-
-  // Add exercise to favorites
-  const toggleFavorite = async (exerciseId) => {
-    let updatedFavorites = [...favorites];
-
-    if (updatedFavorites.includes(exerciseId)) {
-      updatedFavorites = updatedFavorites.filter(id => id !== exerciseId);  // Remove from favorites
+  const toggleFavorite = () => {
+    if (isFavorite) {
+      removeFromFavorites(workout.id);
     } else {
-      updatedFavorites.push(exerciseId); // Add to favorites
+      addToFavorites(workout);
     }
-
-    setFavorites(updatedFavorites);
-    await AsyncStorage.setItem('favorites', JSON.stringify(updatedFavorites));  // Save to AsyncStorage
   };
 
-  // Fetch favorites from AsyncStorage
-  const getFavorites = async () => {
+  // Function to extract YouTube video ID from URL
+  const extractVideoId = (url) => {
+    if (!url) return null;
     try {
-      const storedFavorites = await AsyncStorage.getItem('favorites');
-      if (storedFavorites) {
-        setFavorites(JSON.parse(storedFavorites));
-      }
+      // Handle different YouTube URL formats
+      const regex =
+        /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+      const match = url.match(regex);
+      return match ? match[1] : null;
     } catch (error) {
-      console.error('Error fetching favorites:', error);
+      console.error("Error extracting video ID:", error);
+      return null;
     }
   };
 
-  useEffect(() => {
-    getFavorites();  // Get the favorites when component loads
-  }, []);
+  const playVideo = (videoUrl) => {
+    if (!videoUrl) {
+      Alert.alert("Error", "No video available for this exercise.");
+      return;
+    }
 
-  const completedCount = detailedExercises.filter(exercise => exercise.completed).length;
-  const completionPercentage = Math.round((completedCount / detailedExercises.length) * 100);
+    const videoId = extractVideoId(videoUrl);
+    if (!videoId) {
+      Alert.alert(
+        "Invalid Video URL",
+        "The video URL is not a valid YouTube link. Please contact support."
+      );
+      return;
+    }
 
-  const renderImageSlider = () => {
-    if (!selectedExercise) return null;
-
-    return (
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>{selectedExercise.name}</Text>
-          <ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={(event) => {
-              const slideIndex = Math.floor(event.nativeEvent.contentOffset.x / width * 0.9);
-              setCurrentImageIndex(slideIndex);
-            }}
-          >
-            {selectedExercise.imageURLs.map((image, index) => (
-              <Image
-                key={index}
-                source={{ uri: image }}
-                style={styles.sliderImage}
-                resizeMode="cover"
-              />
-            ))}
-          </ScrollView>
-
-          <View style={styles.paginationContainer}>
-            {selectedExercise.imageURLs.map((_, index) => (
-              <View
-                key={index}
-                style={[styles.paginationDot, currentImageIndex === index ? styles.paginationDotActive : {}]}
-              />
-            ))}
-          </View>
-
-          <Text style={styles.modalDescription}>{selectedExercise.description}</Text>
-          <Text style={styles.modalInstructions}>{selectedExercise.instructions}</Text>
-
-          {!selectedExercise.completed && (
-            <TouchableOpacity
-              style={styles.completeButton}
-              onPress={() => {
-                markExerciseAsCompleted(selectedExercise.exerciseId);
-                setSelectedExercise(null);
-              }}
-            >
-              <Text style={styles.completeButtonText}>Hoàn thành</Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setSelectedExercise(null)}
-          >
-            <Text style={styles.closeButtonText}>Đóng</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
+    setSelectedVideoId(videoId);
+    setVideoError(false); // Reset error state
+    setModalVisible(true);
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text>Đang tải chi tiết bài tập...</Text>
-      </View>
-    );
-  }
+  const renderExercise = ({ item }) => (
+    <TouchableOpacity
+      style={styles.exerciseCard}
+      onPress={() => playVideo(item.exercise?.video_urls?.[0])}
+      disabled={!item.exercise?.video_urls?.length}
+    >
+      <Text style={styles.exerciseName}>
+        {item.exercise?.name || "Unknown Exercise"}
+      </Text>
+      <Text style={styles.exerciseDetails}>
+        {item.sets} sets x {item.reps} reps
+      </Text>
+      <Text style={styles.exerciseDescription}>
+        {item.exercise?.description || "No description available."}
+      </Text>
+      {item.exercise?.video_urls?.length ? (
+        <Text style={styles.watchVideoText}>Tap to watch video</Text>
+      ) : (
+        <Text style={styles.noVideoText}>No video available</Text>
+      )}
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>{selectedWorkout.name || "Không có tiêu đề"}</Text>
-      <Text style={styles.subHeader}>Thời gian: {selectedWorkout.duration || "Không rõ thời gian"}</Text>
-      <Text style={styles.completionText}>
-        Hoàn thành: {completionPercentage}% ({completedCount}/{detailedExercises.length} bài)
+      <Text style={styles.title}>{workout.name || "Unnamed Workout"}</Text>
+      <Text style={styles.detail}>Duration: {workout.duration || "N/A"}</Text>
+      <Text style={styles.description}>
+        {workout.notes || "No notes available."}
       </Text>
 
+      <Text style={styles.sectionTitle}>Exercises</Text>
       <FlatList
-        data={detailedExercises}
-        keyExtractor={(item) => item.exerciseId?.toString() || Math.random().toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.exerciseItem}
-            onPress={() => {
-              setSelectedExercise(item);
-              setCurrentImageIndex(0);
-            }}
-          >
-            <Image
-              source={{ uri: item.imageURLs[0] }}
-              style={styles.exerciseImage}
-            />
-            <View style={styles.exerciseInfo}>
-              <Text style={styles.exerciseName}>{item.name}</Text>
-              <Text style={styles.exerciseTime}>{item.sets} sets x {item.reps} reps</Text>
-            </View>
-
-            {/* Favorite Button */}
-            <TouchableOpacity
-              onPress={() => toggleFavorite(item.exerciseId)}
-              style={styles.favoriteButton}
-            >
-              <FontAwesome
-                name={favorites.includes(item.exerciseId) ? 'heart' : 'heart-o'}
-                size={30}
-                color="red"
-              />
-            </TouchableOpacity>
-
-            {item.completed && (
-              <FontAwesome name="check-circle" size={30} color="green" />
-            )}
-          </TouchableOpacity>
-        )}
+        data={workoutExercises}
+        renderItem={renderExercise}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.exerciseList}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No exercises found</Text>
+        }
+        nestedScrollEnabled={true} // Cho phép cuộn bên trong ScrollView
       />
 
-      {selectedExercise && renderImageSlider()}
+      <TouchableOpacity style={styles.button} onPress={toggleFavorite}>
+        <Text style={styles.buttonText}>
+          {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: "#388E3C" }]}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.buttonText}>Back to Workouts</Text>
+      </TouchableOpacity>
+
+      {/* Video Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            {isLoading && <ActivityIndicator size="large" color="#4CAF50" />}
+            {videoError ? (
+              <Text style={styles.errorText}>
+                Failed to load video. Please try again or contact support.
+              </Text>
+            ) : (
+              selectedVideoId && (
+                <YoutubePlayer
+                  height={height * 0.4}
+                  width={width * 0.8}
+                  videoId={selectedVideoId}
+                  play={true}
+                  onReady={() => setIsLoading(false)}
+                  onError={(error) => {
+                    setIsLoading(false);
+                    setVideoError(true);
+                    Alert.alert(
+                      "Video Error",
+                      "Failed to load YouTube video. Please try again or contact support."
+                    );
+                    console.error("YouTube video error:", error);
+                  }}
+                  onChangeState={(event) => {
+                    if (event === "buffering") setIsLoading(true);
+                    if (event === "playing" || event === "paused")
+                      setIsLoading(false);
+                  }}
+                />
+              )
+            )}
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -229,165 +190,97 @@ const WorkoutDetailScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     padding: 20,
+    backgroundColor: "#F5F5F5",
+    alignItems: "center",
   },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#212121",
+    marginBottom: 10,
   },
-  header: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  subHeader: {
+  detail: { fontSize: 16, color: "#666", marginBottom: 10 },
+  description: {
     fontSize: 14,
-    textAlign: 'center',
-    color: 'gray',
+    color: "#666",
+    textAlign: "center",
     marginBottom: 20,
+    paddingHorizontal: 20,
   },
-  exerciseItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-    backgroundColor: '#f9f9f9',
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#212121",
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  exerciseList: { paddingBottom: 20, width: "100%" },
+  exerciseCard: {
+    backgroundColor: "#FFFFFF",
+    padding: 15,
     borderRadius: 10,
-    padding: 10,
+    marginBottom: 10,
+    elevation: 2,
   },
-  exerciseImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    marginRight: 15,
+  exerciseName: { fontSize: 16, fontWeight: "500", color: "#212121" },
+  exerciseDetails: { fontSize: 14, color: "#666", marginVertical: 5 },
+  exerciseDescription: { fontSize: 12, color: "#666" },
+  watchVideoText: {
+    fontSize: 12,
+    color: "#4CAF50",
+    marginTop: 5,
+    textDecorationLine: "underline",
   },
-  exerciseInfo: {
-    flex: 1,
-  },
-  exerciseName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  exerciseTime: {
+  noVideoText: { fontSize: 12, color: "#D32F2F", marginTop: 5 },
+  emptyText: {
     fontSize: 14,
-    color: 'gray',
+    color: "#666",
+    textAlign: "center",
+    marginTop: 20,
   },
-  // Styles cho modal slider
+  button: {
+    backgroundColor: "#4CAF50",
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 25,
+    marginVertical: 10,
+    width: "80%",
+    elevation: 2,
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
   modalContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContent: {
     width: width * 0.9,
-    maxHeight: '80%',
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 20,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  sliderImage: {
-    width: width * 0.85,
-    height: 200,
+    backgroundColor: "#FFFFFF",
     borderRadius: 10,
-    marginHorizontal: width * 0.025,
+    padding: 20,
+    alignItems: "center",
   },
-  paginationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginVertical: 15,
-  },
-  paginationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ccc',
-    marginHorizontal: 4,
-  },
-  paginationDotActive: {
-    backgroundColor: '#4CAF50',
-  },
-  modalDescription: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 10,
-    lineHeight: 22,
-  },
-  modalInstructions: {
+  errorText: {
     fontSize: 14,
-    textAlign: 'left',
+    color: "#D32F2F",
+    textAlign: "center",
     marginBottom: 20,
-    lineHeight: 20,
   },
   closeButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#D32F2F",
     paddingVertical: 10,
     paddingHorizontal: 30,
     borderRadius: 25,
     marginTop: 10,
   },
-  closeButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  completionText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-    textAlign: 'center',
-    marginVertical: 10,
-  },
-  completeButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    marginTop: 10,
-  },
-  completeButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  exerciseItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between', // Thêm dòng này
-    marginBottom: 15,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 10,
-    padding: 10,
-  },
-  favoriteButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-  },
-  exerciseItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 10,
-    padding: 10,
-    position: 'relative',
-  },
+  closeButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
 });
 
-export default WorkoutDetailScreen;
+export default WorkoutDetail;

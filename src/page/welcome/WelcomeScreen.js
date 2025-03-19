@@ -1,13 +1,19 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+// src/page/welcome/WelcomeScreen.js
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
 const WelcomeScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Xin chào, tôi là huấn luyện viên cá nhân của bạn</Text>
-      <Text style={styles.subtitle}>Dưới đây là vài câu hỏi trước khi tôi có thể tùy chỉnh kế hoạch tập luyện tại nhà độc đáo của bạn</Text>
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('GenderScreen')}>
-        <Text style={styles.buttonText}>Hãy bắt đầu!</Text>
+      <Text style={styles.title}>Welcome to Your Fitness Journey</Text>
+      <Text style={styles.subtitle}>
+        Let's set up your profile to create a personalized workout plan.
+      </Text>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate("GenderScreen")}
+      >
+        <Text style={styles.buttonText}>Get Started</Text>
       </TouchableOpacity>
     </View>
   );
@@ -16,32 +22,37 @@ const WelcomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
     padding: 20,
+    backgroundColor: "#F5F5F5",
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#212121",
+    marginBottom: 20,
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    marginTop: 10,
-    textAlign: 'center',
-    marginHorizontal: 30,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 40,
+    paddingHorizontal: 20,
   },
   button: {
-    marginTop: 30,
-    backgroundColor: '#4CAF50',
-    paddingVertical: 12,
+    backgroundColor: "#4CAF50",
+    paddingVertical: 15,
     paddingHorizontal: 40,
-    borderRadius: 30,
+    borderRadius: 25,
+    elevation: 2,
   },
   buttonText: {
-    color: 'white',
-    fontSize: 18,
-    textAlign: 'center',
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });
 

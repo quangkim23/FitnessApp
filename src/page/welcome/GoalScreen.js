@@ -1,25 +1,51 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// src/page/welcome/GoalScreen.js
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const GoalScreen = ({ navigation }) => {
-  const saveGoal = async (goal) => {
-    await AsyncStorage.setItem('goal', goal);
-    navigation.navigate('ExercisePreferenceScreen');
+  const [goal, setGoal] = useState(null);
+
+  const options = [
+    { label: "Giảm cân", value: "lose_weight" },
+    { label: "Xây dựng cơ bắp", value: "build_muscle" },
+    { label: "Giữ dáng", value: "stay_fit" },
+  ];
+
+  const handleSelect = async (value) => {
+    setGoal(value);
+    try {
+      await AsyncStorage.setItem("goal", value);
+      navigation.navigate("ExercisePreferenceScreen");
+    } catch (err) {
+      console.error("Error saving goal:", err);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Mục tiêu chính của bạn là gì?</Text>
-      <TouchableOpacity style={styles.button} onPress={() => saveGoal('Giảm cân')}>
-        <Text style={styles.buttonText}>Giảm cân</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={() => saveGoal('Xây dựng cơ bắp')}>
-        <Text style={styles.buttonText}>Xây dựng cơ bắp</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={() => saveGoal('Giữ dáng')}>
-        <Text style={styles.buttonText}>Giữ dáng</Text>
-      </TouchableOpacity>
+      <Text style={styles.title}>Mục tiêu tập luyện của bạn là gì?</Text>
+      <View style={styles.optionsContainer}>
+        {options.map((option) => (
+          <TouchableOpacity
+            key={option.value}
+            style={[
+              styles.button,
+              goal === option.value && styles.selectedButton,
+            ]}
+            onPress={() => handleSelect(option.value)}
+          >
+            <Text
+              style={[
+                styles.buttonText,
+                goal === option.value && styles.selectedButtonText,
+              ]}
+            >
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 };
@@ -27,49 +53,38 @@ const GoalScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
     padding: 20,
+    backgroundColor: "#F5F5F5",
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontWeight: "bold",
+    color: "#212121",
+    marginBottom: 30,
+    textAlign: "center",
   },
-  subtitle: {
-    fontSize: 16,
-    marginTop: 10,
-    textAlign: 'center',
-    marginHorizontal: 30,
-  },
-  goalButtons: {
-    marginTop: 30,
-  },
+  optionsContainer: { width: "100%", alignItems: "center" },
   button: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-    borderRadius: 30,
-    marginVertical: 10,
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+    marginVertical: 8,
+    width: "80%",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    elevation: 2,
   },
+  selectedButton: { backgroundColor: "#4CAF50", borderColor: "#388E3C" },
   buttonText: {
-    color: 'white',
-    fontSize: 18,
-    textAlign: 'center',
+    fontSize: 16,
+    color: "#212121",
+    textAlign: "center",
+    fontWeight: "500",
   },
-  nextButton: {
-    marginTop: 30,
-    backgroundColor: '#4CAF50',
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-    borderRadius: 30,
-  },
-  nextButtonText: {
-    color: 'white',
-    fontSize: 18,
-    textAlign: 'center',
-  },
+  selectedButtonText: { color: "#FFFFFF", fontWeight: "600" },
 });
 
 export default GoalScreen;

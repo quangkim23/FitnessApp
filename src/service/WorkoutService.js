@@ -1,121 +1,84 @@
-// src/services/WorkoutService.js
-import { useState, useEffect } from 'react';
-const API_URL = 'http://192.168.13.105:9999/workouts'; // Địa chỉ đúng của JSON Server
+// src/service/WorkoutService.js
+import axios from "axios";
 
-// Hàm lấy danh sách bài tập phù hợp cho từng user
-// const getWorkoutsForUser = (user, exercises, levelExercises) => {
-//     // Tìm bài tập theo levelId của user
-//     const userExercises = levelExercises
-//         .filter(le => le.levelId === user.levelId)
-//         .map(le => {
-//             const exerciseDetail = exercises.find(e => e.id === le.exerciseId);
-//             return {
-//                 ...exerciseDetail,
-//                 sets: le.sets,
-//                 reps: le.reps
-//             };
-//         });
+const API_URL = "http://192.168.0.101:9999";
 
-//     return {
-//         userId: user.id,
-//         name: `${user.name} - Kế hoạch tập luyện`,
-//         date: new Date().toISOString().split('T')[0], // Ngày hiện tại
-//         duration: "60 phút",
-//         exercises: userExercises,
-//         notes: `Chương trình tập luyện dành cho ${user.goal} - Trình độ ${user.levelId}`
-//     };
-// };
-const getWorkoutsForUser = (user, exercises, levelExercises) => {
-    let suitableBmiLevel = '';
-
-    if (user.bmi < 18.5) {
-        suitableBmiLevel = 'underweight'; // BMI dưới 18.5 là thiếu cân
-    } else if (user.bmi >= 18.5 && user.bmi < 24.9) {
-        suitableBmiLevel = 'normal'; // BMI bình thường
-    } else if (user.bmi >= 24.9) {
-        suitableBmiLevel = 'overweight'; // BMI thừa cân hoặc béo phì
-    }
-
-    // Lọc bài tập phù hợp với mức BMI
-    const userExercises = exercises
-        .filter(exercise => exercise.bmiLevel === suitableBmiLevel) // Lọc theo bmiLevel của bài tập
-        .map(exercise => {
-            return {
-                ...exercise,
-                sets: levelExercises.find(le => le.exerciseId === exercise.id)?.sets || 0,
-                reps: levelExercises.find(le => le.exerciseId === exercise.id)?.reps || 0
-            };
-        });
-
-    return {
-        userId: user.id,
-        name: `${user.name} - Kế hoạch tập luyện`,
-        date: new Date().toISOString().split('T')[0], // Ngày hiện tại
-        duration: "60 phút",
-        exercises: userExercises,
-        notes: `Chương trình tập luyện dành cho ${user.goal} - BMI: ${user.bmi} - Trình độ ${user.fitnessLevel}`
-    };
+export const fetchWorkouts = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/workouts`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching workouts:", error);
+    return [];
+  }
 };
 
-
-
-// Hàm gán bài tập cho tất cả user
-const assignWorkoutsToUsers = (users, exercises, levelExercises) => {
-    return users.map(user => getWorkoutsForUser(user, exercises, levelExercises));
+export const fetchExercises = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/exercises`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching exercises:", error);
+    return [];
+  }
 };
 
-// Hàm lưu danh sách bài tập lên json-server
-const saveWorkoutsToServer = async (workouts) => {
-    try {
-        const response = await fetch('http://192.168.13.105:9999/workouts', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(workouts),
-        });
-
-        const result = await response.json();
-        console.log("✅ Dữ liệu tập luyện đã được lưu!", result);
-    } catch (error) {
-        console.error("❌ Lỗi khi lưu bài tập:", error);
-    }
+export const fetchWorkoutExercises = async (workoutId) => {
+  try {
+    const [workoutExercises, exercises] = await Promise.all([
+      axios.get(`${API_URL}/workout_exercises?workout_id=${workoutId}`),
+      axios.get(`${API_URL}/exercises`),
+    ]);
+    const workoutExerciseData = workoutExercises.data;
+    const exerciseData = exercises.data;
+    return workoutExerciseData.map((we) => {
+      const exercise = exerciseData.find((ex) => ex.id === we.exercise_id);
+      return { ...we, exercise };
+    });
+  } catch (error) {
+    console.error("Error fetching workout exercises:", error);
+    return [];
+  }
 };
 
-// Hook để gọi dữ liệu từ server
-const useWorkoutData = () => {
-    const [workouts, setWorkouts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-        const fetchWorkouts = async () => {
-            try {
-                const response = await fetch(API_URL);
-
-                if (!response.ok) {
-                    throw new Error(`Lỗi mạng: ${response.status} - ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                
-                // 🛠️ Đảm bảo dữ liệu trả về là một mảng (tránh lỗi undefined)
-                setWorkouts(Array.isArray(data) ? data : []);
-                console.log("✅ Dữ liệu bài tập:", data);
-            } catch (error) {
-                console.error("❌ Lỗi khi tải bài tập:", error);
-                setError(error.message);
-                setWorkouts([]); // Tránh bị undefined
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchWorkouts();
-    }, []);
-
-    return { workouts, loading, error };
+export const fetchLevels = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/levels`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching levels:", error);
+    return [];
+  }
 };
 
+export const fetchLevelExercises = async (levelId) => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/level_exercises?level_id=${levelId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching level exercises:", error);
+    return [];
+  }
+};
 
-export { getWorkoutsForUser, assignWorkoutsToUsers, saveWorkoutsToServer, useWorkoutData };
+export const fetchUsers = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/users`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return [];
+  }
+};
+
+export const saveUserData = async (userData) => {
+  try {
+    const response = await axios.post(`${API_URL}/users`, userData);
+    return response.data;
+  } catch (error) {
+    console.error("Error saving user data:", error);
+    throw error;
+  }
+};

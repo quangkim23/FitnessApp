@@ -1,27 +1,52 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+// src/page/welcome/ExerciseFrequencyScreen.js
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const ExerciseFrequencyScreen = ({ navigation }) => {
+  const [frequency, setFrequency] = useState(null);
+
+  const options = [
+    { label: "1 time/week", value: 1 },
+    { label: "2 times/week", value: 2 },
+    { label: "3 times/week", value: 3 },
+    { label: "4+ times/week", value: 4 },
+  ];
+
+  const handleSelect = async (value) => {
+    setFrequency(value);
+    try {
+      await AsyncStorage.setItem("exerciseFrequency", value.toString());
+      navigation.navigate("FitnessLevelScreen");
+    } catch (err) {
+      console.error("Error saving frequency:", err);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bạn muốn tập luyện thường xuyên như thế nào?</Text>
-
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('FitnessLevelScreen')}>
-        <Text style={styles.buttonText}>1 lần/tuần</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('FitnessLevelScreen')}>
-        <Text style={styles.buttonText}>2 lần/tuần</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('FitnessLevelScreen')}>
-        <Text style={styles.buttonText}>3 lần/tuần</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('FitnessLevelScreen')}>
-        <Text style={styles.buttonText}>4 lần/tuần</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.nextButton} onPress={() => navigation.navigate('FitnessLevelScreen')}>
-        <Text style={styles.nextButtonText}>Tiếp theo</Text>
-      </TouchableOpacity>
+      <Text style={styles.title}>How often do you want to exercise?</Text>
+      <View style={styles.optionsContainer}>
+        {options.map((option) => (
+          <TouchableOpacity
+            key={option.value}
+            style={[
+              styles.button,
+              frequency === option.value && styles.selectedButton,
+            ]}
+            onPress={() => handleSelect(option.value)}
+          >
+            <Text
+              style={[
+                styles.buttonText,
+                frequency === option.value && styles.selectedButtonText,
+              ]}
+            >
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 };
@@ -29,40 +54,38 @@ const ExerciseFrequencyScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
     padding: 20,
+    backgroundColor: "#F5F5F5",
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontWeight: "bold",
+    color: "#212121",
+    marginBottom: 30,
+    textAlign: "center",
   },
+  optionsContainer: { width: "100%", alignItems: "center" },
   button: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-    borderRadius: 30,
-    marginVertical: 10,
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+    marginVertical: 8,
+    width: "80%",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    elevation: 2,
   },
+  selectedButton: { backgroundColor: "#4CAF50", borderColor: "#388E3C" },
   buttonText: {
-    color: 'white',
-    fontSize: 18,
-    textAlign: 'center',
+    fontSize: 16,
+    color: "#212121",
+    textAlign: "center",
+    fontWeight: "500",
   },
-  nextButton: {
-    marginTop: 30,
-    backgroundColor: '#4CAF50',
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-    borderRadius: 30,
-  },
-  nextButtonText: {
-    color: 'white',
-    fontSize: 18,
-    textAlign: 'center',
-  },
+  selectedButtonText: { color: "#FFFFFF", fontWeight: "600" },
 });
 
 export default ExerciseFrequencyScreen;
